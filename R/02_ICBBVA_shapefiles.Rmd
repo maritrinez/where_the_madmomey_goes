@@ -1,0 +1,167 @@
+InnovaChallengeBBVA
+========================================================
+Load the needed shapefiles
+--------------------------------------------------------
+
+```{r libraries}
+setwd("/Users/martinez/Dropbox/R InnovaChallengeBBVA")
+library(ggmap)
+library(maptools)
+library(sp)
+library(rgdal)
+library(rgeos)
+library(ggplot2)
+```
+
+#### 1. Load the postal_codes polygons
+
+```{r load_postal_codes}
+# Read the shapefile
+getinfo.shape("Shapefiles/MAD_Codigos_Postales/codigos_postales.shp")
+cp_poly <- readShapePoly("Shapefiles/MAD_Codigos_Postales/codigos_postales.shp", proj4string = ED50)
+
+# Change the encoding
+cp_poly@data <- as.data.frame(apply(cp_poly@data, 2, function(x) iconv(x, "latin1", "UTF-8")))
+
+# Set the projection to long lat
+cp_poly <- spTransform(cp_poly, CRS("+proj=longlat"))
+
+# Subset the Madrid capital postal codes
+cp_poly_mad <- cp_poly[grep("^280[0-9]{2}", cp_poly$GEOCODIGO), ]
+
+rm(cp_poly)
+```
+
+
+#### 2. Get the Shopping Centers' locations
+
+> load the locations (for zara and el corte inglés) 
+
+```{r load_comercios}
+comercios <- read.csv("metadata/comercios.csv", header = TRUE, stringsAsFactors = FALSE)
+
+# Based on the address, get the long lat for every shop.
+comercios_lonlat <- sapply(comercios$Location, geocode)
+comercios_lonlat <- as.data.frame(t(comercios_lonlat))
+
+comercios_lonlat$Location <- row.names(comercios_lonlat)
+comercios_lonlat <- merge(comercios, comercios_lonlat)
+head(comercios_lonlat)
+```
+
+
+> Get the long lat for the 'centros comerciales' and the 'Grandes superficies especializadas' from the Comunidad de Madrid Shapefiles
+
+```{r cc_gse_shapefiles}
+
+# Set the shapefiles original projection
+ED50<-CRS(paste("+proj=utm +zone=30 +ellps=intl +units=m +no_defs"))
+
+# Read the two Shapefiles
+centros_comerciales <- readShapePoints("Shapefiles/MAD_Centros comerciales/centrocom.shp",  proj4string = ED50)
+
+grandes_superficies <- readShapePoints("Shapefiles/MAD_Grandes superficies especializadas/comerespecial.shp", proj4string = ED50)
+
+#Add the variable 'TIPO' to the grandes_superficies@data
+grandes_superficies$TIPO <- "grande superficie"
+
+# Bind the two shapefiles
+cc <- spRbind(centros_comerciales, grandes_superficies)
+
+# Set the right enconding
+cc@data <- as.data.frame(apply(cc@data, 2, function(x) iconv(x, "latin1", "UTF-8")))
+
+# Subset the ones in Madrid Capital
+cc_mad <- cc[cc$MUNICIPIO == "Madrid", ]
+
+# Set the projection to long lat
+ccLongLat <- spTransform(cc_mad, CRS("+proj=longlat"))
+```
+
+> Put the three together
+
+```{r}
+# Transform the 'comercios_lonlat' data.frame into a SpatialPointsDataFrame
+
+comerciosSP <- SpatialPointsDataFrame(comercios_lonlat[ ,5:6], proj4string = CRS("+proj=longlat"), data = comercios_lonlat[ ,1:4])
+
+# Get ready the comerciosSP@data to bind it to ccLongLat
+names(comerciosSP@data)
+names(ccLongLat@data)
+
+comerciosSP$Location <- NULL
+comerciosSP$OBS <- NULL
+comerciosSP$CMUN <- "079"
+comerciosSP$MUNICIPIO <- "Madrid"
+colnames(comerciosSP@data)[names(comerciosSP@data) == "Via"] <- "ETIQUETA"
+colnames(comerciosSP@data)[names(comerciosSP@data) == "Text"] <- "TIPO"
+
+comerciosSP@data <- comerciosSP@data[ ,c(3,4,2,1)]
+
+names(comerciosSP@data)
+names(ccLongLat@data)
+
+# Bind the SpatialPintsDataFrames both 'comerciosSP' and 'ccLongLat'
+comerciales <- spRbind(comerciosSP, ccLongLat)
+
+comerciales <- comerciales[grepl("^El Corte Ingl", comerciales$ETIQUETA) == FALSE, ]
+
+# Transform them into a data frame
+long <- coordinates(comerciales)[, 1]  
+lat <- coordinates(comerciales)[, 2]
+dataComerciales <- cbind(comerciales@data, long, lat)
+head(dataComerciales)
+```
+
+
+#### 3. Load the metro stations
+```{r metro_stations}
+# Load the shapefile
+getinfo.shape("Shapefiles/MAD_metro_stations/estmetro.shp")
+metroStations <- readShapePoints("Shapefiles/MAD_metro_stations/estmetro.shp", proj4string = ED50)
+
+# Change the encoding
+metroStations@data <- as.data.frame(apply(metroStations@data, 2, function(x) iconv(x, "latin1", "UTF-8")))
+
+# Set the projection to long lat
+metroStations <- spTransform(metroStations, CRS("+proj=longlat"))
+
+# Subset the metroStations points in the cpPolyMad polygons
+over(metroStations,as(cp_poly_mad,"SpatialPolygons"))
+metroStationsMad <- metroStations[!is.na(over(metroStations,as(cp_poly_mad,"SpatialPolygons"))), ]
+
+# Subset the main metro stations (just to have a reference)
+main <- c("Delicias", "Hospital 12 de Octubre", "Pitis", "Mirasierra", "Montecarmelo", "Fuencarral", "Barrio del Pilar", "Chamartin", "Plaza de Castilla", "Francos Rodriguez", "Las Tablas", "Pinar de Chamartín", "Mar de Cristal", "Santiago Bernabéu", "Oporto", "Nuevos  Ministerios", "Ciudad Lineal", "Vicálvaro", "Sáinz de Baranda", "Ventas", "O'Donnell", "Barrio de la Concepción", "Alonso Martínez", "Embajadores", "Sol", "Moncloa", "Plaza de España", "Aeropuerto T4", "Aeropuerto", "Campo de las Naciones", "Arturo Soria", "Carabanchel Alto", "Carabanchel", "Villaverde Bajo Cruce", "Villaverde Alto", "La Peseta", "Las suertes", "Puente de Vallecas", "Villa de Vallecas", "Príncipe Pío", "Lago", "Casa de Campo", "Aluche", "Cuatro Vientos", "La Peseta", "San Bernardo", "Ciudad universitaria", "Puerta de Toledo", "Estación de Aravaca", "Antonio Machado", "Cuatro Caminos", "Opera", "Ibiza", "Goya", "Avda. de América", "Pacífico", "García Noblejas", "Canillejas", "Estadio Olímpico", "La Elipa", "Puerta de Arganda", "Alto del Arenal", "Vinateros", "Las Suertes", "Atocha", "Prosperidad", "Colombia")
+
+metroStationsMad <- metroStationsMad[metroStationsMad$ESTACION %in% main, ] 
+
+# transform into a data.frame
+long <- coordinates(metroStationsMad)[, 1]  
+lat <- coordinates(metroStationsMad)[, 2]
+dataMetroStations <- cbind(metroStationsMad@data, long, lat)
+head(dataMetroStations)
+```
+
+#### 4. Define a function to find out the contiguous polygons 
+```{r contiguos_polygons}
+
+cp_poly_mad$GEOCODIGO <- as.numeric(as.character(cp_poly_mad$GEOCODIGO))
+
+
+getContiguous <- function(mainCP){
+	contiguous <- data.frame()
+	mainCP <- as.numeric(mainCP)
+	for (cp in postal_codes$label){
+		print(mainCP)
+		print(cp)
+		intersec <- gIntersection(as(cp_poly_mad[cp_poly_mad$GEOCODIGO == mainCP, ], "SpatialPolygons"), as(cp_poly_mad[cp_poly_mad$GEOCODIGO == cp, ], "SpatialPolygons"))
+		if(length(intersec) != 0 & cp != mainCP){
+			tempContiguos <- data.frame(
+				"mainCP" = mainCP,
+				"contiguousCP" = cp)
+			contiguous <- rbind(contiguous, tempContiguos)
+			}
+		}
+	return(contiguous)
+	}
+```

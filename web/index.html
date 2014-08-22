@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Where the MadMoney goes promotes the proximity shopping by helping entrepreneurs to make decisions about which kind of commerce make sense in the areas to set up a business.">
+  <meta name="keywords" content="datavis,R,innovachallenge,bbva,visualization spain">
+  <meta name="author" content="Beatriz Martínez">
+  <title>Where the MadMoney goes</title>
+  <link rel="stylesheet" media="all" href="stylesheets/pure-min.css">
+  <link href="stylesheets/styles.css" media="all" rel="stylesheet" />
+  <script src="javascripts/jquery-1.7.1.min.js"></script>
+  <script src="javascripts/jquery.smoothZoom.min.js"></script>
+  <script src="javascripts/jquery.ba-hashchange.min.js"></script>
+  <script src="javascripts/jquery.backstretch.min.js"></script>
+  <script src="javascripts/application.js"></script>
+  <link href="http://fonts.googleapis.com/css?family=Lobster" rel="stylesheet" type="text/css">
+  <link href="http://fonts.googleapis.com/css?family=Vollkorn" rel="stylesheet" type="text/css">
+  <link href="http://fonts.googleapis.com/css?family=Droid+Sans|Dosis:200" rel="stylesheet" type="text/css">
+  <meta name="google-site-verification" content="nvZCLC7e8wP2sIIOEape60A8sttNn9wIRApl21BkhHU" />
+  <meta property="og:title" content="Where the MadMoney goes"/>
+  <meta property="og:url" content="http://visualizados.com/where-the-madmoney-goes"/>
+</head>
+<body>
+  <div id = "header">
+    <a href="http://visualizados.com"><span>&#8592;</span> visualizados.com</a>
+  </div>
+
+  <div id="wrapper-middle">
+    <header>
+      <h1>Where the MadMoney goes</h1>
+      <p>Where the MadMoney goes is intended to promote the proximity shopping
+      by helping entrepreneurs to make decisions about which kind of commerce
+      could make sense in the areas they are thinking to set up a business (and
+      start a new adventure!)</p>
+    </header>
+
+      <p>
+      <small>
+        The data is based only in the payments made with a BBVA credit
+        card. Take into account that the payments in the small shops might be
+        underrepresented.
+      </small>
+      </p>
+
+    <div class="divider">
+      <a href="#insights">
+        START!
+        <img src="images/scroll.png" style="display:block;position:relative;top:20px;left:50%;margin-left:-9px;">
+      </a>
+    </div>
+  </div>
+
+  <div id="wrapper-middle-big">
+    <h2 id="insights">Which insights are you able to find out?</h2>
+    <ul>
+      <li>Where people in your area spend their money?</li>
+      <li>Do they spend more inside their areas or in other areas?</li>
+      <li>Which kind of products do they buy inside their area?</li>
+      <li>Which ones are mostly acquired in other areas?</li>
+      <li>Do they go shopping to other areas because of the big companies<sup class="footnote-mark">*</sup> are there?</li>
+      <li>What do they buy far from their houses but not in the big companies stores?</li>
+    </ul>
+    <p><small>
+      <span class="footnote-mark">*</span> El Corte Inglés, Zara, Shopping Centers, Specialized Shopping Centers (Ikea, Leroy Merlin…)
+    </small></p>
+
+    <h3>Homework, after exploring the data</h3>
+    <p>
+      Forgetting about competing with big companies…
+    </p>
+
+    <p class="question">~</p>
+
+    <p class="question">Could you think in some product or service that make sense to offer in your area?</p>
+
+    <p class="question">~</p>
+
+    <h4 class="hint">( Hint )</h4>
+    <p class="question-hint">
+      Maybe something they buy far from their houses but not in the big companies stores?
+    </p>
+
+    <div class="divider">
+      <a href="#examples">
+        NAVIGATE SOME EXAMPLES!
+        <img src="images/scroll.png" style="display:block;position:relative;top:20px;left:50%;margin-left:-9px;">
+      </a>
+    </div>
+  </div>
+
+  <div id="wrapper-middle-big">
+    <h2 id="examples">Some examples</h2>
+
+    <p class="example">
+    51% of people from Villaverde Alto (postal code 28021)
+    buy their sports stuff and toys outside their neighborhood, where there is
+    not any big company store! Only 6% of the purchases are inside the
+    neighborhood!
+    </p>
+
+    <p style="text-align:center;">
+      <img src="images/example_bar_28021_es_sportsandtoys.png" width="708"/>
+    </p>
+
+    <p class="question">~</p>
+
+    <p class="example">
+    What about the fashion? In the Ibiza area (postal code
+    28009) 70% of the money stays in the same area or goes where there is no
+    big company store.
+    </p>
+
+    <p style="text-align:center;">
+      <img src="images/example_bar_28009_es_fashion.png" width="708" />
+    </p>
+
+    <p class="question">~</p>
+
+    <div class="divider">
+      <a href="#vis">
+        EXPLORE THE DATA!
+        <img src="images/scroll.png" style="display:block;position:relative;top:20px;left:50%;margin-left:-9px;">
+      </a>
+    </div>
+  </div>
+
+  <div id="wrapper">
+    <h2 id="vis">Explore and find out!</h2>
+
+    <div class="pure-g">
+      <div class="pure-u-2-3">
+        <form class="pure-form">
+          <label for="postal_code"><span>location</span> Postal Code</label>
+          <select id="postal_code" name="postal_code">
+            <option value="28001" selected>28001</option>
+            <option value="28002">28002</option>
+            <option value="28003">28003</option>
+            <option value="28004">28004</option>
+            <option value="28005">28005</option>
+            <option value="28006">28006</option>
+            <option value="28007">28007</option>
+            <option value="28008">28008</option>
+            <option value="28009">28009</option>
+            <option value="28010">28010</option>
+            <option value="28011">28011</option>
+            <option value="28012">28012</option>
+            <option value="28013">28013</option>
+            <option value="28014">28014</option>
+            <option value="28015">28015</option>
+            <option value="28016">28016</option>
+            <option value="28017">28017</option>
+            <option value="28018">28018</option>
+            <option value="28019">28019</option>
+            <option value="28020">28020</option>
+            <option value="28021">28021</option>
+            <option value="28022">28022</option>
+            <option value="28023">28023</option>
+            <option value="28024">28024</option>
+            <option value="28025">28025</option>
+            <option value="28026">28026</option>
+            <option value="28027">28027</option>
+            <option value="28028">28028</option>
+            <option value="28029">28029</option>
+            <option value="28030">28030</option>
+            <option value="28031">28031</option>
+            <option value="28032">28032</option>
+            <option value="28033">28033</option>
+            <option value="28034">28034</option>
+            <option value="28035">28035</option>
+            <option value="28036">28036</option>
+            <option value="28037">28037</option>
+            <option value="28038">28038</option>
+            <option value="28039">28039</option>
+            <option value="28040">28040</option>
+            <option value="28041">28041</option>
+            <option value="28042">28042</option>
+            <option value="28043">28043</option>
+            <option value="28044">28044</option>
+            <option value="28045">28045</option>
+            <option value="28046">28046</option>
+            <option value="28047">28047</option>
+            <option value="28048">28048</option>
+            <option value="28049">28049</option>
+            <option value="28050">28050</option>
+            <option value="28051">28051</option>
+            <option value="28052">28052</option>
+            <option value="28053">28053</option>
+            <option value="28054">28054</option>
+            <option value="28055">28055</option>
+          </select>
+          <span class="space"></span>
+          <label for="category"><span>tags</span> Category</label>
+          <select id="category" name="category">
+            <option value="all" selected>All categories</option>
+            <option value="es_auto">Auto</option>
+            <option value="es_barsandrestaurants">Bars and restaurants</option>
+            <option value="es_contents">Books and press</option>
+            <option value="es_fashion">Fashion</option>
+            <option value="es_food">Food</option>
+            <option value="es_health">Health</option>
+            <option value="es_home">Home</option>
+            <option value="es_hotelservices">Accomodation</option>
+            <option value="es_hyper">Hypermarkets</option>
+            <option value="es_leisure">Leisure</option>
+            <option value="es_otherservices">Other services</option>
+            <option value="es_sportsandtoys">Sports and toys</option>
+            <option value="es_tech">Technology</option>
+            <option value="es_transportation">Transport</option>
+            <option value="es_travel">Travel</option>
+            <option value="es_wellnessandbeauty">Wellness and beauty</option>
+          </select>
+        </form>
+      </div>
+    </div>
+
+    <div class="pure-g images">
+      <div class="pure-u-3-5 left">
+        <img src="images/map_28001_all.png" width="708" data-behaviour="map-image" />
+        <img src="images/legend_map.png" width="708"/>
+      </div>
+
+      <div class="pure-u-1-5 right">
+        <div class="pure-g">
+          <div class="pure-u-1">
+            <img src="images/pie_28001_all.png" width="460" data-behaviour="pie-image" class="pie"/>
+            <img src="images/legend_pie.png" width="460" class="legend-pie"/>
+          </div>
+
+          <div class="pure-u-1 bottom">
+            <img src="images/bar2_28001_all.png" width="460" data-behaviour="bar2-image" />
+            <img src="images/legend_bar.png" width="460" class="legend-bar"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      Project developed by <strong>Beatriz Martínez</strong> for the Innova Challenge Big Data
+      launched by the <a href="https://www.centrodeinnovacionbbva.com/">BBVA Innovation Center</a>
+    </p>
+
+    <ul>
+      <li>email: <a href="mailto:mtnezb@gmail.com">mtnezb@gmail.com</a></li>
+      <li>twitter: <a href="https://twitter.com/maritrinez">@maritrinez</a></li>
+    </ul>
+
+    <p>Background picture from <a href="http://www.flickr.com/photos/22528186@N02/2274710803/in/photolist-4t1ugM-4A8baZ-4ANfGn-4BubqB-4BzPB3-4BFNwc-4DbcPX-5d5jhn-5d9Eas-5k84ZC-5m7CiH-5m7Dmn-5m7FYa-5mbURq-5ncckN-5ndfxS-5Rd46q-5S4fnD-5UyCkD-5VZwWG-62a8Zn-67HiLu-6dS9PY-6euKue-6krg8W-6ktmpa-6sct8g-6sRjha-6ygTqB-6ByqJ3-6XUacK-74tyw1-7bBW88-7he3sp-7iFqcw-7o7fV2-7sCWV8-7sCYNK-7sCZbD-7sGWZh-7tET9x-9Yy7EZ-9ouFtZ-9ouFtT-9sX7JB-8MXELE-9KtH3L-8jXa2k-8yZf4a-8ypEDY-8xTBZ3">Gustavo Alterio</a>.</p>
+
+    <p>
+    R Core Team (2013). R: A language and environment for statistical computing. R Foundation for  Statistical Computing, Vienna, Austria. URL <a href="http://www.R-project.org/">http://www.R-project.org/</a>.
+    </p>
+
+    <p><a class="packages" href="#packages">Show R packages used in this project ➞</a></p>
+
+    <ul id="packages">
+      <li>Duncan Temple Lang (2013). RCurl: General network (HTTP/FTP/...) client interface for R. R package version 1.95-4.1. http://CRAN.R-project.org/package=RCurl</li>
+
+      <li>Alex Couture-Beil (2013). rjson: JSON for R. R package version 0.2.13. http://CRAN.R-project.org/package=rjson</li>
+
+      <li>H. Wickham. ggplot2: elegant graphics for data analysis. Springer New York, 2009.</li>
+
+      <li>Hadley Wickham (2007). Reshaping Data with the reshape Package. Journal of Statistical Software,  21(12), 1-20. URL http://www.jstatsoft.org/v21/i12/.</li>
+
+      <li>Frank E Harrell Jr, with contributions from Charles Dupont and many others. (2013). Hmisc: Harrell Miscellaneous. R package version 3.13-0. http://CRAN.R-project.org/package=Hmisc</li>
+
+      <li>Roger Bivand and Nicholas Lewin-Koh (2013). maptools: Tools for reading and handling spatial objects. R package version 0.8-27. http://CRAN.R-project.org/package=maptools</li>
+
+      <li>Pebesma, E.J., R.S. Bivand, 2005. Classes and methods for spatial data in R. R News 5 (2),  http://cran.r-project.org/doc/Rnews/.</li>
+
+      <li>Roger Bivand, Tim Keitt and Barry Rowlingson (2013). rgdal: Bindings for the Geospatial Data Abstraction Library. R package version 0.8-12. http://CRAN.R-project.org/package=rgdal</li>
+
+      <li>Roger Bivand and Colin Rundel (2013). rgeos: Interface to Geometry Engine - Open Source (GEOS). R package version 0.3-2. http://CRAN.R-project.org/package=rgeos</li>
+    </ul>
+  </footer>
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','http://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-46150295-1', 'visualizados.com');
+    ga('send', 'pageview');
+  </script>
+</body>

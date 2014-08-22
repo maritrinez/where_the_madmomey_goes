@@ -1,0 +1,216 @@
+04. Loop to plot the pie plots
+========================================================
+
+1. Things I need
+
+> expenditure_per (the all_zipcodes w/o the month plus the new variables added)
+
+
+
+```{r needs}
+library(reshape2)
+library(ggplot2)
+```
+
+1. Get the data to plot
+For every category
+and for every cp
+how much incomes in
+how much incomes out
+
+```{r exp_out}
+expenditure_out <- data.frame()
+ 
+for (cat in categories$code){
+	if ((cat %in% expenditure_per$category) == FALSE){
+		print(cat)
+		} else {
+			temp_cat <- expenditure_per[expenditure_per$category == cat, ]
+			for (cp in postal_codes$label){
+				if ((cp %in% temp_cat$cp_origin) == FALSE){
+					print(cat)
+					print(cp)
+					} else {
+						temp_cp_out <- temp_cat[temp_cat$cp_origin == cp & temp_cat$cp_dest != cp, ]
+						if(length(temp_cp_out[ ,1]) != 0){
+							temp_expenditure_out <- aggregate(incomes ~ category + cp_origin, data = temp_cp_out, sum)
+							colnames(temp_expenditure_out)[names(temp_expenditure_out) == "incomes"] <- "exp_out"
+							expenditure_out <- rbind(expenditure_out, temp_expenditure_out)
+						}
+					}
+			}
+		}
+}
+
+
+rm(temp_cat, temp_cp_out, temp_expenditure_out, cat, cp)
+```
+
+```{r exp_in}
+expenditure_in <- data.frame()
+ 
+for (cat in categories$code){
+	if ((cat %in% expenditure_per$category) == FALSE){
+		print(cat)
+		} else {
+			temp_cat <- expenditure_per[expenditure_per$category == cat, ]
+			for (cp in postal_codes$label){
+				if ((cp %in% temp_cat$cp_origin) == FALSE){
+					print(cat)
+					print(cp)
+					} else {
+						temp_cp_in <- temp_cat[temp_cat$cp_origin == cp & temp_cat$cp_dest == cp, ]
+						if(length(temp_cp_in[ ,1]) != 0){
+							temp_expenditure_in <- aggregate(incomes ~ category + cp_origin, data = temp_cp_in, sum)
+							colnames(temp_expenditure_in)[names(temp_expenditure_in) == "incomes"] <- "exp_in"
+							expenditure_in <- rbind(expenditure_in, temp_expenditure_in)
+						}
+					}
+			}
+		}
+}
+
+
+rm(temp_cat, temp_cp_in, temp_expenditure_in, cat, cp)
+
+```
+
+Total expenditure
+```{r total_ok}
+expenditure_total <- data.frame()
+ 
+for (cat in categories$code){
+	if ((cat %in% expenditure_per$category) == FALSE){
+		print(cat)
+		} else {
+			temp_cat <- expenditure_per[expenditure_per$category == cat, ]
+			for (cp in postal_codes$label){
+				if ((cp %in% temp_cat$cp_origin) == FALSE){
+					print(cat)
+					print(cp)
+					} else {
+						temp_cp_total <- temp_cat[temp_cat$cp_origin == cp, ]
+						if(length(temp_cp_total[ ,1]) != 0){
+							temp_expenditure_total <- aggregate(incomes ~ category + cp_origin, data = temp_cp_total, sum)
+							colnames(temp_expenditure_total)[names(temp_expenditure_total) == "incomes"] <- "exp_total"
+							expenditure_total <- rbind(expenditure_total, temp_expenditure_total)
+						}
+					}
+			}
+		}
+}
+
+
+rm(temp_cat, temp_cp_total, temp_expenditure_total, cat, cp)
+```
+
+```{r merge_exp_in_out}
+
+exp_in_out<- merge(expenditure_in, expenditure_out, by = c("category", "cp_origin"), all = TRUE)
+exp_in_out <- merge(exp_in_out, expenditure_total, by = c("category", "cp_origin"), all = TRUE)
+
+# Replace the NAs for 0
+exp_in_out[is.na(exp_in_out)] <- 0
+
+# Check the total is equal to in + out
+exp_in_out$test <- exp_in_out$exp_in + exp_in_out$exp_out
+exp_in_out$test <-round(exp_in_out$test, digits = 2)  # In both vectors, set the decimals to two.
+exp_in_out$exp_total<-round(exp_in_out$test, digits = 2)
+
+identical(exp_in_out$test, exp_in_out$exp_total)  # :)
+exp_in_out$test <- NULL
+```
+
+```{r exp_in_out_percentages}
+exp_in_out$exp_in_per <- round((exp_in_out$exp_in*100)/exp_in_out$exp_total, digits = 0)
+exp_in_out$exp_out_per <- round((exp_in_out$exp_out*100)/exp_in_out$exp_total, digits = 0)
+
+exp_in_out$test <- round(exp_in_out$exp_in_per + exp_in_out$exp_out_per, digits = 0)
+unique(exp_in_out$test)  # :)
+
+exp_in_out$test <- NULL
+```
+
+```{r write_csv}
+write.csv(exp_in_out, "metadata/exp_in_out.csv", row.names = FALSE)
+```
+
+2. Get the mean in_out for every category and for the total (this is, the 'all' category)
+```{r means}
+exp_in_mean <- as.data.frame.table(tapply(exp_in_out$exp_in_per, exp_in_out$category, mean))
+exp_out_mean <- as.data.frame.table(tapply(exp_in_out$exp_out_per, exp_in_out$category, mean))
+exp_in_out_mean <- merge(exp_in_mean, exp_out_mean, by = "Var1")
+colnames(exp_in_out_mean) <- c("category", "exp_in_mean", "exp_out_mean")
+	
+```
+
+3. Loop to plot the pie plots
+```{r loop_pie}
+
+mean_all <- exp_in_out_mean[exp_in_out_mean$category == "all", ]
+mean_all_m <- melt(mean_all, id.vars = "category")
+mean_all_m$category <- as.character(mean_all_m$category)
+mean_all_m$variable <- as.character(mean_all_m$variable)
+
+options(stringsAsFactors = FALSE)
+missing_pie <- data.frame("graph" = as.character(), 
+					  "category" = as.character(),
+					  "cp" = as.character())
+
+
+for (cat in categories$code){
+	if ((cat %in% exp_in_out$category) == FALSE){
+		missing_cat <- c("pie", cat, "every")
+		missing_pie <- rbind(missing_pie, missing_cat)
+		} else {
+			temp_cat <- exp_in_out[exp_in_out$category == cat, ]
+			cat_label <- categories$description[categories$code == cat]
+			mean_cat <- exp_in_out_mean[exp_in_out_mean$category == cat, ]
+			mean_cat_m <- melt(mean_cat, id.vars = "category")
+			
+			for (cp in postal_codes$label){
+				if ((cp %in% temp_cat$cp_origin) == FALSE){
+					missing_cp <- c("pie", as.character(cat), as.character(cp))
+					missing_pie <- rbind(missing_pie, missing_cp)
+				} else{
+					temp_cat_cp <- temp_cat[temp_cat$cp_origin == cp, ]
+					temp_cat_cp_m <- melt(temp_cat_cp, id.vars = c("category", "cp_origin"), measure.vars = c("exp_in_per", "exp_out_per")) 
+					# plot the pie
+					
+					# Calculate the position for the labels
+					temp_cat_cp_m$p <- (p<-cumsum(temp_cat_cp_m$value)-diff(c(0,cumsum(temp_cat_cp_m$value)))*(1-0.5))
+					mean_cat_m$p <- (p<-cumsum(mean_cat_m$value)-diff(c(0,cumsum(mean_cat_m$value)))*(1-0.5))
+					mean_all_m$p <- (p<-cumsum(mean_all_m$value)-diff(c(0,cumsum(mean_all_m$value)))*(1-0.5))
+					
+					ggplot() +
+						geom_bar(data=temp_cat_cp_m, aes(x=factor(1), y=value, fill = factor(variable)), width = .4, stat="identity") + 
+						geom_text(data=temp_cat_cp_m, aes(x= 1, y=p, label=paste(value, "%", sep = "")),vjust=0, size = 12, colour = "#332f2e", family="Courier", fontface="bold") +
+						scale_fill_manual(values = c("exp_in_per" = "#ebb83b", "exp_out_per" = "#539C93")) +
+					# Plot the lines for the means
+			 			geom_segment(aes(x = 0.8, xend = 1.2, y = mean_cat_m$value[mean_cat_m$variable == "exp_in_mean"], yend = mean_cat_m$value[mean_cat_m$variable == "exp_in_mean"]), linetype = "dashed", colour = "#272b68", size = 1.2) +
+						geom_segment(aes(x = 0.8, xend = 1.2, y = mean_all_m$value[mean_all_m$variable == "exp_in_mean"], yend = mean_all_m$value[mean_all_m$variable == "exp_in_mean"]), linetype = "dashed", colour = "#287833", size = 1.2) +	
+					# Labels for the mean lines
+						geom_text(data=mean_cat_m[mean_cat_m$variable == "exp_in_mean", ], aes(x= 1.3, y=value+0.3, label=paste(round(value, digits= 0), "%", sep = "")),vjust=0, size=9, colour = "#272b68", family="Courier", fontface="bold") +
+						geom_text(data=mean_all_m[mean_all_m$variable == "exp_in_mean", ], aes(x= 1.3, y=value, label=paste(round(value, digits= 0), "%", sep = "")),vjust=0, size=9, colour = "#287833", family="Courier", fontface="bold") +
+					
+					coord_polar(theta="y") +
+					ggtitle(paste("Expenditure in / out the", cp, "postal code\nfor the category", cat_label, sep = " ")) +
+					theme(legend.position = "none", 
+						  panel.background = element_blank(),
+						  panel.grid = element_blank(),
+						  axis.ticks = element_blank(),
+						  axis.title = element_blank(),
+						  axis.text = element_blank(),
+						  plot.title = element_text(lineheight=.8, family="Courier", size = 20,  vjust = -26))
+# 					
+# 					Save the plot
+					print(last_plot())
+					filename <- paste(getwd(), "/graphs/pie_", cp, "_", cat, ".png", sep = "")
+					dev.copy(file = filename, device=png, bg="white",  width=1000, height=1000) 
+    				dev.off()
+				}
+			}
+		}
+}
+```
+

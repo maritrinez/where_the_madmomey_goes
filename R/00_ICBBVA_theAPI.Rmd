@@ -1,0 +1,157 @@
+InnovaChallengeBBVA
+========================================================
+Downloading and saving the data from the BBVA API
+--------------------------------------------------------
+
+#### 1. Set the working directory and load the required libraries.
+```{r wd_libraries}
+setwd("~/Dropbox/R InnovaChallengeBBVA")
+require(RCurl)
+require(rjson)
+```
+
+
+#### 2. Set the API authentication parameters.
+```{r authentication_parameters}
+APP_ID = "martinezBBVA"
+APP_KEY = "fd48d0216bcdba771d7db97c4578c05d6a043428"
+strToEncode = paste(APP_ID,APP_KEY,sep=":")
+auth = base64Encode(strToEncode)  # in RCurl package
+```
+
+#### 3. Get the metadata that will be needed from the API.   
+
+> The categories' codes from the API. 
+
+```{r categories}
+options(stringsAsFactors = FALSE)
+CATEGORIES <- "https://api.bbva.com/apidatos/info/merchants_categories.json"
+cat <-getForm(CATEGORIES, .opts=list(userpwd=strToEncode, httpauth=1L,verbose=T))
+cat <- fromJSON(cat)
+categories <- do.call(rbind.data.frame, cat$data$categories)
+names(categories) <- names(cat$data$categories[[1]])
+
+# Add a row with the 'all' category
+categories <- rbind(categories, c("all", "All categories"))
+
+write.csv(categories, "metadata/merchants_categories.csv", row.names = FALSE)
+```
+
+> The postal codes list  
+
+```{r postal_codes}
+postal_codes <- read.table("~/Dropbox/R Data/cps_madrid.csv", sep="|", header=T, stringsAsFactors=F)
+
+write.csv(postal_codes, "metadata/postal_codes.csv", row.names = FALSE)
+```
+   
+> The dates.   
+
+```{r dates}
+dates <- c("201211", "201212", "201301", "201302", "201303", "201304")
+write.csv(dates, "metadata/dates.csv", row.names = FALSE)
+```
+
+
+#### 4. Download top client origin zip code.   
+
+> CP destiny: every CP.     
+> CATEGORIES: ALL and every category.   
+> DATA: CP origin.    
+> DATE: every month.    
+
+Load the metadata needed to run the loop and set the request parameters
+```{r loop_and_request_parameters}
+# Read the metadata.
+dates <- read.csv("metadata/dates.csv", stringsAsFactors = FALSE)
+postal_codes <- read.csv("metadata/postal_codes.csv", stringsAsFactors = FALSE)
+categories <- read.csv("metadata/merchants_categories.csv", stringsAsFactors = FALSE) 
+
+# API url
+CUSTOMER_ZIPCODES="https://api.bbva.com/apidatos/zones/customer_zipcodes.json"
+
+# Set the requested parameters
+datemin = 20121101
+datemax = 20130430
+groupby = "month"
+by = "incomes"
+```
+
+> Downlaod the data from the API
+
+```{r loop}
+# LOOP for downloading the data (all CP, all and every category, every month)
+
+zipcodes <- data.frame(
+    label = character(),
+    num_cards = integer(),
+    num_payments = integer(),
+    incomes = numeric(),
+    stringsAsFactors=F)
+
+for (category in categories$code) {
+	for (zipcode in postal_codes$label) {
+		origin <- tryCatch(getForm(CUSTOMER_ZIPCODES, 
+								   .opts=list(userpwd=strToEncode, httpauth=1L,verbose=T), 
+								   date_min = datemin,date_max = datemax, group_by = groupby, 
+								   zipcode = zipcode, category = category, by=by), 
+						   HTTPError = function(e) { 
+						   	cat("HTTP error: ", e$message, "\n")
+						   	})
+		
+		if (length(origin != 0)) {
+			origin <- fromJSON(origin)
+			for (h in (1:length(origin$data$stats))) {
+				
+				if (length(origin$data$stats[[h]]$zipcodes) != 0) {
+						df <- do.call(rbind.data.frame, origin$data$stats[[h]]$zipcodes)
+						df$month <- origin$data$stats[[h]]$date
+						df$cp_dest <- as.character(zipcode)
+						df$category <- category
+						zipcodes <- rbind(zipcodes, df)
+				}
+			}
+		}
+	}
+}
+```
+
+Add a row for any category-cp-month where there is no label (origin) == cp_dest
+```{r add_rows}
+temp2 <- data.frame(
+	label = character(), 
+	num_cards = integer(), 
+	num_payments = integer(), 
+	incomes = numeric(), 
+	month = character(), 
+	cp_dest = character(),
+	category = character()
+	)
+    i = 1
+
+for (cat in unique(zipcodes$category)){
+	temp <- zipcodes[zipcodes$category == cat, ]
+	for (cp in unique(zipcodes$cp_dest)){
+		temp <- temp[temp$cp_dest == cp, ]
+		for (date in unique(zipcodes$month)){
+			a <- temp[temp$month == date & temp$cp_dest == temp$label, ]
+			if(length(a[ ,1]) == 0){
+				temp2[i, ] <- c(cp, 0, 0, 0, date, cp, cat)
+				i <- i+1
+			}
+		}
+	}
+}
+```
+
+Combine both the 'zipcodes' and the 'temp2' data.frames
+```{r combine_zipcodes_temp2}
+zipcodes <- rbind(zipcodes, temp2)
+
+# Replace the 'label' variable name for 'cp_origin'
+colnames(zipcodes)[names(zipcodes) == "label"] <- "cp_origin"
+
+
+# Save it as a csv file
+write.csv(zipcodes, "rawdata/all_zipcodes.csv", row.names = FALSE)
+```

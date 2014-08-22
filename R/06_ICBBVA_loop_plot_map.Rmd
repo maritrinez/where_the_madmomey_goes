@@ -1,0 +1,123 @@
+04. Loop to plot the maps
+========================================================
+
+
+```{r}
+expenditure_per <- read.csv("metadata/expenditure_per.csv", stringsAsFactors = FALSE, header = TRUE)
+
+
+path <- function(x1, y1, x2, y2, len = 100, curved = TRUE){
+	from <- c(x1, y1) # Origin
+	to <- c(x2, y2)  # Terminus
+	
+	# Add curve:
+	bezierMid <- c(from[1], to[2])  # A midpoint, for bended edges
+	bezierMid <- (from + to + bezierMid) / 3  # Moderate the Bezier midpoint
+	
+	if(curved == FALSE){bezierMid <- (from + to) / 2}  # Remove the curve
+	
+	edge <- data.frame(bezier(c(from[1], bezierMid[1], to[1]),  # Generate
+							  c(from[2], bezierMid[2], to[2]),  # X & y
+							  evaluation = len))  # Bezier path coordinates
+	return(edge)
+}
+
+```
+
+
+
+2. The loop
+
+
+```{r}
+
+ for (cat in unique(expenditure_per$category)){
+ 	if ((cat %in% expenditure_per$category) == TRUE){
+	exp_cat <- expenditure_per[expenditure_per$category == cat, ]
+
+ 	for (cp in unique(exp_cat$cp_origin)){
+ 		if ((cp %in% exp_cat$cp_origin) == TRUE){
+		exp_cat_cp <- exp_cat[exp_cat$cp_origin == cp, ]  # Subset the data that matters
+ 		print(cp)
+		# Create the curves for each subsetted data frame
+		if ((length(exp_cat_cp$cp_origin)) != 0){
+		curves <- data.frame()
+		j = 1
+
+		for (i in 1: length(exp_cat_cp$cp_dest)){
+			x_1 <- exp_cat_cp$lon_origin[i]
+			y_1 <- exp_cat_cp$lat_origin[i]
+			x_2 <- exp_cat_cp$lon_dest[i]
+			y_2 <- exp_cat_cp$lat_dest[i]
+	
+			temp_curve <- path(x_1,y_1,x_2,y_2, len =100, curved=T)
+			temp_curve$group <- j
+			temp_curve$incomes_per <- exp_cat_cp$incomes_per[i]
+			temp_curve$cut <- exp_cat_cp$cut[i]
+			temp_curve$Freq <- exp_cat_cp$Freq[i]
+			temp_curve$cp <- exp_cat_cp$cp_dest[i]
+	
+			curves <- rbind(curves, temp_curve)
+			j <- j+1
+		}
+		
+		# Add the 'fill code' for the different type of polygons
+		# Create a new variable
+		data_cpPolyMad$fill<- NA
+	
+		# The ones where the money goes
+		poly_in <- unique(curves$cp[curves$cp != cp])
+		if (length(poly_in) != 0){
+			data_cpPolyMad$fill[data_cpPolyMad$GEOCODIGO %in% poly_in] <- data_cpPolyMad$commercial[data_cpPolyMad$GEOCODIGO %in% poly_in]
+		} 
+		
+		# The ones where the money doesn't go
+		poly_out <- unique(curves$cp)
+		if (length(poly_out) != 0){
+			data_cpPolyMad$fill[!(data_cpPolyMad$GEOCODIGO %in% poly_out)] <- "other"
+		} 
+		
+		# The exact cp
+		data_cpPolyMad$fill[data_cpPolyMad$GEOCODIGO == cp] <- "exact"
+
+		# Create the plot
+		ggplot() +
+			# Plot the polygons
+			geom_polygon(data=data_cpPolyMad, aes(x=long, y=lat, group=group, fill = fill), colour= "#53777A", lwd=0.5) +
+			# Set the colors for the 'fill code'
+			scale_fill_manual(values = c("0 stores" = "#99E4DB", "1 - 3 stores" = "#7DC7BE", "4 - 6 stores" = "#6FB9B0", "7 - 10 stores" = "#61AAA1", "11 stores" = "#539C93", "exact" = "#ebb83b", "other" = "white")) +
+			# Plot the metro stations (only the label)
+			geom_text(data=dataMetroStations, aes(x= long, y=lat, label=ESTACION), hjust=-0.2, vjust=0.5, size = 5, colour = "#332f2e") +
+			geom_point(data = dataComerciales, aes(x = long, y = lat, colour = TIPO), size = 9, alpha = 0.7) + 
+			# Plot the comercios
+			scale_colour_manual(values = c("El Corte Inglés" = "#226d4a", "Zara" = "#484547", "cc" = "#ba127d", "grande superficie" = "#f0b23b")) +
+	
+			# Set the background and the axis to blank
+			ggtitle(paste("Overview expenditure in / out the", cp, "postal code\nfor the category", cat_label, sep = " ")) +
+					theme(legend.position = "none", 
+						  panel.background = element_blank(),
+						  panel.grid = element_blank(),
+						  axis.ticks = element_blank(),
+						  axis.title = element_blank(),
+						  axis.text = element_blank(),
+						  plot.title = element_text(lineheight=.8, family="Courier", size = 30,  vjust = -26))
+		
+		if (length(curves$cp[curves$cp != cp]) != 0){
+			# Plot the curves (except the 'exact' one)
+			last_plot() +
+			geom_path(data = curves[curves$cp != cp, ], aes(x = x, y = y, group = group,  size = incomes_per), alpha = 0.5, lineend = "round", colour = "#e83a33") 
+		}
+		
+		# Save the image
+		print(last_plot())
+		filename <- paste(getwd(), "/graphs/map_", cp, "_", cat, ".png", sep = "")
+		dev.copy(file = filename, device=png, bg="white",  width=3000, height=3000) 
+    	dev.off()
+		}
+		}
+	}		
+} 
+ 	}
+
+```
+
