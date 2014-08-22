@@ -71,7 +71,7 @@ function updateHash(postalCode, category){
 function loadImages(postalCode, category){
   replaceImage('map', postalCode, category);
   replaceImage('pie', postalCode, category);
-  replaceImage('bar2', postalCode, category);
+  replaceImage('bar', postalCode, category);
 }
 
 function replaceImage(type, postalCode, category){
