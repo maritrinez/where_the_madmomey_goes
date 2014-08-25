@@ -1,0 +1,1 @@
+rsync -av  * blato01:/var/www/where-the-money-goes/
