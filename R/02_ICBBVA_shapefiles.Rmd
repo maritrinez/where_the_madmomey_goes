@@ -4,7 +4,7 @@ Load the needed shapefiles
 --------------------------------------------------------
 
 ```{r libraries}
-setwd("/Users/martinez/Dropbox/R InnovaChallengeBBVA")
+setwd("/Users/martinez/Dropbox/InnovaChallengeBBVA/R")
 library(ggmap)
 library(maptools)
 library(sp)
@@ -16,6 +16,9 @@ library(ggplot2)
 #### 1. Load the postal_codes polygons
 
 ```{r load_postal_codes}
+# Set the shapefiles original projection
+ED50<-CRS(paste("+proj=utm +zone=30 +ellps=intl +units=m +no_defs"))
+
 # Read the shapefile
 getinfo.shape("Shapefiles/MAD_Codigos_Postales/codigos_postales.shp")
 cp_poly <- readShapePoly("Shapefiles/MAD_Codigos_Postales/codigos_postales.shp", proj4string = ED50)
@@ -46,6 +49,7 @@ comercios_lonlat <- as.data.frame(t(comercios_lonlat))
 
 comercios_lonlat$Location <- row.names(comercios_lonlat)
 comercios_lonlat <- merge(comercios, comercios_lonlat)
+comercios_lonlat[ ,5:6] <- unlist(comercios_lonlat[ ,5:6])
 head(comercios_lonlat)
 ```
 
@@ -53,10 +57,6 @@ head(comercios_lonlat)
 > Get the long lat for the 'centros comerciales' and the 'Grandes superficies especializadas' from the Comunidad de Madrid Shapefiles
 
 ```{r cc_gse_shapefiles}
-
-# Set the shapefiles original projection
-ED50<-CRS(paste("+proj=utm +zone=30 +ellps=intl +units=m +no_defs"))
-
 # Read the two Shapefiles
 centros_comerciales <- readShapePoints("Shapefiles/MAD_Centros comerciales/centrocom.shp",  proj4string = ED50)
 
@@ -83,7 +83,10 @@ ccLongLat <- spTransform(cc_mad, CRS("+proj=longlat"))
 ```{r}
 # Transform the 'comercios_lonlat' data.frame into a SpatialPointsDataFrame
 
-comerciosSP <- SpatialPointsDataFrame(comercios_lonlat[ ,5:6], proj4string = CRS("+proj=longlat"), data = comercios_lonlat[ ,1:4])
+comerciosSP <- comercios_lonlat
+coordinates(comerciosSP) <- c("lon", "lat")
+
+comerciosSP <- SpatialPointsDataFrame(comerciosSP@coords, proj4string = CRS("+proj=longlat"), data = comerciosSP@data)
 
 # Get ready the comerciosSP@data to bind it to ccLongLat
 names(comerciosSP@data)
@@ -142,26 +145,4 @@ dataMetroStations <- cbind(metroStationsMad@data, long, lat)
 head(dataMetroStations)
 ```
 
-#### 4. Define a function to find out the contiguous polygons 
-```{r contiguos_polygons}
 
-cp_poly_mad$GEOCODIGO <- as.numeric(as.character(cp_poly_mad$GEOCODIGO))
-
-
-getContiguous <- function(mainCP){
-	contiguous <- data.frame()
-	mainCP <- as.numeric(mainCP)
-	for (cp in postal_codes$label){
-		print(mainCP)
-		print(cp)
-		intersec <- gIntersection(as(cp_poly_mad[cp_poly_mad$GEOCODIGO == mainCP, ], "SpatialPolygons"), as(cp_poly_mad[cp_poly_mad$GEOCODIGO == cp, ], "SpatialPolygons"))
-		if(length(intersec) != 0 & cp != mainCP){
-			tempContiguos <- data.frame(
-				"mainCP" = mainCP,
-				"contiguousCP" = cp)
-			contiguous <- rbind(contiguous, tempContiguos)
-			}
-		}
-	return(contiguous)
-	}
-```

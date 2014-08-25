@@ -3,11 +3,9 @@
 
 1. Things I need
 
-> expenditure_per (the all_zipcodes w/o the month plus the new variables added)
-
-
-
 ```{r needs}
+expenditure_per <- read.csv("metadata/expenditure_per.csv")
+
 library(reshape2)
 library(ggplot2)
 ```
